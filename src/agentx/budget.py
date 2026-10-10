@@ -5,11 +5,11 @@ Actual usage settles a reservation. This module never makes provider calls.
 """
 
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from decimal import ROUND_UP, Decimal
 from pathlib import Path
-from typing import Iterator
 
 _MICRO = Decimal("1000000")
 
