@@ -1,0 +1,37 @@
+{
+  "method": "scripted_offline_runtime_fixture",
+  "NOT_real_model_reliability": true,
+  "NOT_prompt_injection_attack_success_rate": true,
+  "timestamp_utc": "2026-10-10T10:04:43.383465+00:00",
+  "git_commit": "97349f3c8691632bd3007795e72eeee59b5c4994",
+  "python": "3.12.15",
+  "os": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "cpu_count": 4,
+  "library_versions": {
+    "pydantic": "2.13.5",
+    "pydantic-settings": "2.14.2",
+    "httpx": "0.28.1"
+  },
+  "repetitions": 3,
+  "benign_cases": 40,
+  "adversarial_cases": 30,
+  "synthetic_benign_runtime_pass": {
+    "successes": 120,
+    "samples": 120,
+    "rate": 1.0,
+    "wilson_95": [
+      0.9689797289440706,
+      1.0
+    ]
+  },
+  "synthetic_mock_exfil_prevented": {
+    "successes": 90,
+    "samples": 90,
+    "rate": 1.0,
+    "wilson_95": [
+      0.9590629315783191,
+      0.9999999999999999
+    ]
+  },
+  "notes": "Scripted behavior; cannot be generalized to real LLM models."
+}

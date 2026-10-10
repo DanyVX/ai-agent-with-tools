@@ -1,0 +1,17 @@
+{
+  "benchmark": "m0_cassette_fingerprint_smoke",
+  "not_an_agent_success_metric": true,
+  "timestamp_utc": "2026-10-10T10:04:43.027286+00:00",
+  "git_commit": "97349f3c8691632bd3007795e72eeee59b5c4994",
+  "python": "3.12.15",
+  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "cpu_count": 4,
+  "packages": {
+    "pydantic": "2.13.5",
+    "pydantic-settings": "2.14.2",
+    "httpx": "0.28.1"
+  },
+  "iterations": 100,
+  "elapsed_ns": 273644,
+  "sample_sha256": "f0b95d6d4097ae18a7eeb5cf59fe2aae86b2ed39476ee06724879bc53cabd035"
+}
