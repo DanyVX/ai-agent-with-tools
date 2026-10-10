@@ -86,9 +86,7 @@ async def test_malformed_args_are_typed_error() -> None:
         return httpx.Response(200, json=response)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        adapter = OpenAICompatibleAdapter(
-            client, endpoint="https://provider.invalid", model="test"
-        )
+        adapter = OpenAICompatibleAdapter(client, endpoint="https://provider.invalid", model="test")
         with pytest.raises(ProviderProtocolError, match="invalid"):
             await adapter.complete([], [])
 
@@ -103,9 +101,7 @@ async def test_no_retries_on_400() -> None:
         return httpx.Response(400, json={})
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        adapter = OpenAICompatibleAdapter(
-            client, endpoint="https://provider.invalid", model="test"
-        )
+        adapter = OpenAICompatibleAdapter(client, endpoint="https://provider.invalid", model="test")
         with pytest.raises(ProviderUnavailable, match="model ID"):
             await adapter.complete([], [])
     assert calls == 1
@@ -130,9 +126,7 @@ async def test_retry_429_and_missing_usage(monkeypatch: pytest.MonkeyPatch) -> N
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        adapter = OpenAICompatibleAdapter(
-            client, endpoint="https://provider.invalid", model="test"
-        )
+        adapter = OpenAICompatibleAdapter(client, endpoint="https://provider.invalid", model="test")
         response = await adapter.complete([{"role": "user", "content": "hello"}], [])
     assert calls == 2
     assert response.usage.estimated
