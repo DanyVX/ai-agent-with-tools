@@ -45,6 +45,12 @@ def main() -> None:
         if not (ROOT / "Dockerfile").exists():
             parser.exit(2, "Docker image is not part of M0 (no Dockerfile).\n")
         commands["docker-build"] = ["docker", "build", "-t", "agentx:local", "."]
+    if task == "setup":
+        subprocess.run(  # noqa: S603 - fixed dependency version
+            [sys.executable, "-m", "pip", "install", "--upgrade", "setuptools==83.0.0"],
+            cwd=ROOT,
+            check=True,
+        )
     subprocess.run(commands[task], cwd=ROOT, check=True)  # noqa: S603 - fixed allowlist
 
 
