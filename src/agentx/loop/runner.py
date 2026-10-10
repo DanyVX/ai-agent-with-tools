@@ -11,6 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from agentx.guard.policy import GuardedExecutor
 from agentx.llm.contracts import LLMClient, ToolCall
 from agentx.tools.core import ToolRegistry
 
@@ -90,12 +91,14 @@ class AgentRunner:
         allowed_tools: set[str],
         limits: RunLimits | None = None,
         pricing: Pricing | None = None,
+        guarded_executor: GuardedExecutor | None = None,
     ) -> None:
         self.client = client
         self.registry = registry
         self.allowed = set(allowed_tools)
         self.limits = limits or RunLimits()
         self.pricing = pricing or Pricing()
+        self.executor = guarded_executor or registry
 
     async def run(self, task: str, *, system: str = "Use tools carefully.") -> RunResult:
         run_id = uuid.uuid4().hex
@@ -203,7 +206,7 @@ class AgentRunner:
                     })
                     continue
 
-                observations = await self.registry.execute_many(raw_calls, allowed=self.allowed)
+                observations = await self.executor.execute_many(raw_calls, allowed=self.allowed)
                 executed.extend(r.call_id for r in observations if r.ok)
                 if any(r.code == "invalid_arguments" for r in observations):
                     repair_count += 1
