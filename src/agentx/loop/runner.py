@@ -291,7 +291,9 @@ class AgentRunner:
                     {
                         "role": "assistant",
                         "content": response.text,
-                        "tool_calls": [call.model_dump(mode="json") for call in response.tool_calls],
+                        "tool_calls": [
+                            call.model_dump(mode="json") for call in response.tool_calls
+                        ],
                     }
                 )
                 for obs in observations:
