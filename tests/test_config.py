@@ -20,7 +20,11 @@ def test_safe_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize("provider", ["anthropic", "openai_compat"])
 def test_live_provider_requires_explicit_positive_caps(provider: str) -> None:
     with pytest.raises(ValidationError, match="requires explicit"):
-        Settings(_env_file=None, provider=provider)
+        Settings(
+            _env_file=None,
+            provider=provider,
+            openai_base_url="https://api.example.org/v1",
+        )
 
 
 def test_live_provider_remains_disabled_in_m0() -> None:
