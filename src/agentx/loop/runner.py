@@ -175,9 +175,7 @@ class AgentRunner:
                         if frame is not None
                         else "unknown"
                     )
-                    return finish(
-                        "provider_error", step, error=f"{type(exc).__name__}@{location}"
-                    )
+                    return finish("provider_error", step, error=f"{type(exc).__name__}@{location}")
                 if trace:
                     trace.emit(
                         "llm",
