@@ -107,8 +107,10 @@ class AgentRunner:
         self.store = store
         self.trace_path = trace_path
 
-    async def run(self, task: str, *, system: str = "Use tools carefully.") -> RunResult:
-        run_id = uuid.uuid4().hex
+    async def run(
+        self, task: str, *, system: str = "Use tools carefully.", run_id: str | None = None
+    ) -> RunResult:
+        run_id = run_id or uuid.uuid4().hex
         trace = TraceRecorder(Path(self.trace_path), run_id) if self.trace_path else None
         if self.store:
             self.store.save(run_id, "running", {"task_length": len(task)})

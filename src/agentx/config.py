@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     )
 
     provider: Provider = Provider.CASSETTE
+    model: str = ""
+    allow_live: bool = False
+    max_input_tokens: int = Field(default=4096, ge=1, le=200000)
+    input_usd_per_million: Decimal = Field(default=Decimal("0"), ge=0)
+    output_usd_per_million: Decimal = Field(default=Decimal("0"), ge=0)
     max_run_usd: Decimal = Field(default=Decimal("0"), ge=0, max_digits=12, decimal_places=6)
     max_day_usd: Decimal = Field(default=Decimal("0"), ge=0, max_digits=12, decimal_places=6)
     budget_db_path: str = ".local/agentx-budget.sqlite3"
@@ -39,8 +44,15 @@ class Settings(BaseSettings):
         return self
 
     def assert_provider_implemented(self) -> None:
-        if self.provider != Provider.CASSETTE:
-            raise RuntimeError(
-                "Live providers are not implemented in M0. "
-                "Selecting a provider does not authorize a network request."
-            )
+        if self.provider == Provider.CASSETTE:
+            return
+        if not self.allow_live:
+            raise RuntimeError("Set AGENTX_ALLOW_LIVE=true to explicitly enable provider calls")
+        if not self.model:
+            raise RuntimeError("AGENTX_MODEL is required for real provider calls")
+        if self.input_usd_per_million <= 0 or self.output_usd_per_million <= 0:
+            raise RuntimeError("Verified input/output price rates must be configured")
+        if self.provider == Provider.ANTHROPIC and not self.anthropic_api_key:
+            raise RuntimeError("Missing AGENTX_ANTHROPIC_API_KEY")
+        if self.provider == Provider.OPENAI_COMPAT and not self.openai_api_key:
+            raise RuntimeError("Missing AGENTX_OPENAI_API_KEY")
