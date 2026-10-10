@@ -48,8 +48,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def check_live_budget(self) -> "Settings":
-        if self.provider != Provider.CASSETTE and not self.is_local_provider() and (
-            self.max_run_usd <= 0 or self.max_day_usd <= 0
+        if (
+            self.provider != Provider.CASSETTE
+            and not self.is_local_provider()
+            and (self.max_run_usd <= 0 or self.max_day_usd <= 0)
         ):
             raise ValueError(
                 "Paid/provider mode requires explicit AGENTX_MAX_RUN_USD and "
@@ -70,5 +72,9 @@ class Settings(BaseSettings):
             raise RuntimeError("Verified input/output price rates must be configured")
         if self.provider == Provider.ANTHROPIC and not self.anthropic_api_key:
             raise RuntimeError("Missing AGENTX_ANTHROPIC_API_KEY")
-        if self.provider == Provider.OPENAI_COMPAT and not self.is_local_provider() and not self.openai_api_key:
+        if (
+            self.provider == Provider.OPENAI_COMPAT
+            and not self.is_local_provider()
+            and not self.openai_api_key
+        ):
             raise RuntimeError("Missing AGENTX_OPENAI_API_KEY")

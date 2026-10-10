@@ -48,6 +48,7 @@ def test_secret_never_in_repr() -> None:
     settings = Settings(_env_file=None, anthropic_api_key="dont-print-this")
     assert "dont-print-this" not in repr(settings)
 
+
 def test_local_model_requires_opt_in_but_no_money_or_api_key() -> None:
     from agentx.config import Provider
 
