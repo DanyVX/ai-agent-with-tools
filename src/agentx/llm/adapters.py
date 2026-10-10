@@ -70,9 +70,7 @@ class JSONAdapter:
     async def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
         for attempt in range(self.max_attempts):
             try:
-                response = await self.client.post(
-                    self.endpoint, headers=self.headers, json=payload
-                )
+                response = await self.client.post(self.endpoint, headers=self.headers, json=payload)
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 if attempt + 1 == self.max_attempts:
                     raise ProviderUnavailable("provider network timeout/transport failure") from exc
@@ -123,7 +121,9 @@ class OpenAICompatibleAdapter(JSONAdapter):
                 {
                     "type": "function",
                     "function": {
-                        "name": t.name, "description": t.description, "parameters": t.parameters
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": t.parameters,
                     },
                 }
                 for t in tools
@@ -153,7 +153,9 @@ class OpenAICompatibleAdapter(JSONAdapter):
                 else estimated_usage(messages, text)
             )
             return LLMResponse(
-                text=text, tool_calls=calls, usage=usage,
+                text=text,
+                tool_calls=calls,
+                usage=usage,
                 stop_reason=choice.get("finish_reason") or "unknown",
             )
         except (KeyError, IndexError, TypeError, ValueError, ValidationError) as exc:
@@ -189,9 +191,7 @@ class AnthropicAdapter(JSONAdapter):
         data = await self._post(payload)
         try:
             blocks = data["content"]
-            text = "\n".join(
-                block["text"] for block in blocks if block.get("type") == "text"
-            )
+            text = "\n".join(block["text"] for block in blocks if block.get("type") == "text")
             calls = [
                 ToolCall(
                     id=block.get("id") or f"missing-{i}",
@@ -208,7 +208,9 @@ class AnthropicAdapter(JSONAdapter):
                 else estimated_usage(messages, text)
             )
             return LLMResponse(
-                text=text, tool_calls=calls, usage=usage,
+                text=text,
+                tool_calls=calls,
+                usage=usage,
                 stop_reason=data.get("stop_reason") or "unknown",
             )
         except (KeyError, IndexError, TypeError, ValueError, ValidationError) as exc:
