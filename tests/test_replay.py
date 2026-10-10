@@ -18,7 +18,8 @@ async def test_recorded_run_reproduces_exact_tool_sequence(tmp_path: Path) -> No
     original = await AgentRunner(
         client, make_registry(tmp_path / "sandbox"), allowed_tools={"calculator"}
     ).run("calculate 5 * 3")
-    assert original.outcome == "completed" and original.answer == "15"
+    assert original.outcome == "completed", f"{original.outcome}: {original.error}"
+    assert original.answer == "15"
     replay = await AgentRunner(
         ReplayClient(store, "fixture-run"),
         make_registry(tmp_path / "sandbox"),
