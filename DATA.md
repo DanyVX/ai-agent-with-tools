@@ -1,25 +1,30 @@
-# Data and dependency provenance
+# Data, package and license provenance
 
 ## Data
-M0 uses **no training, evaluation, identity, biometric, or personal datasets**.
-Unit tests create synthetic in-memory/temp-directory fixtures only.
+No human imagery, biometric documents, real emails, real customer records or
+trained model weights are committed. The sandbox sample database contains
+three synthetic products and a synthetic text file. Attack cases contain **planted
+fake canary strings** and fake email destinations under `.invalid` domains.
 
-## Third-party dependencies
-Version pins live in `pyproject.toml`; transitive dependencies are **not locked**
-until a `uv.lock` is produced and validated on a networked development machine.
-Before release, verify every direct/transitive license against its installed wheel
-metadata and upstream license text. Current recorded items are preliminary:
+Generated 40 benign and 30 adversarial cases are project-owned synthetic code;
+the list is deterministic and reviewed in `eval/tasks/` and `eval/adversarial/`.
 
-| Dependency | Intended use | License review status |
+## Dependencies
+
+The precise installed version of each package is the one recorded in
+`pyproject.toml`; transitive dependency pinning via `uv.lock` is pending.
+License terms should be independently verified against the exact installed
+distribution and its upstream official license before release.
+
+| Package | Role | Review status |
 | --- | --- | --- |
-| pydantic, pydantic-settings | validation/configuration | Pending detailed release verification |
-| httpx | future HTTP provider client | Pending detailed release verification |
-| typer, rich | CLI/display | Pending detailed release verification |
-| pytest, pytest-cov, pytest-asyncio | tests | Pending detailed release verification |
-| hypothesis | property-based tests | MPL-2.0 (verify selected release) |
-| ruff, mypy, pre-commit, pip-audit | quality/security tooling | Pending detailed release verification |
-| setuptools | build backend | Pending detailed release verification |
+| pydantic / pydantic-settings | Contracts and env | Exact wheel license review pending |
+| httpx | Provider HTTP transport | Exact wheel license review pending |
+| typer / rich | CLI and terminal traces | Exact wheel license review pending |
+| pytest / pytest-asyncio / pytest-cov / hypothesis | Tests | Exact wheel license review pending |
+| ruff / mypy / pre-commit / pip-audit | Quality and security | Exact wheel license review pending |
+| setuptools | Build | Exact wheel license review pending |
 
-No model, dataset, or dependency is claimed to be cleared for commercial use
-without checking its exact version and license. Add checksums for future data
-download scripts; never commit restricted data or model weights.
+No AGPL or noncommercial component is knowingly distributed, but that is
+**not proof of a complete license audit**. New models or datasets require a
+new entry with source URL, license, checksum and permission rationale.

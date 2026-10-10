@@ -30,7 +30,7 @@ def test_live_provider_remains_disabled_in_m0() -> None:
         max_run_usd=Decimal("0.50"),
         max_day_usd=Decimal("2"),
     )
-    with pytest.raises(RuntimeError, match="not implemented"):
+    with pytest.raises(RuntimeError, match="AGENTX_ALLOW_LIVE"):
         settings.assert_provider_implemented()
 
 
