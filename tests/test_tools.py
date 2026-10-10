@@ -46,7 +46,8 @@ async def test_registry_schema_unknown_args_and_approval(tmp_path: Path) -> None
     invalid = await reg.execute("calculator", {"expression": "2+2", "extra": 1}, call_id="2")
     assert invalid.code == "invalid_arguments"
     denied = await reg.execute(
-        "write_note", {"filename": "a", "content": "b", "idempotency_key": "abc123"},
+        "write_note",
+        {"filename": "a", "content": "b", "idempotency_key": "abc123"},
         call_id="3",
     )
     assert denied.code == "approval_required"
@@ -65,7 +66,8 @@ async def test_note_idempotent(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_http_get_offline_allowlist(tmp_path: Path) -> None:
     reg = make_registry(
-        tmp_path, allowed_hosts={"example.org"},
+        tmp_path,
+        allowed_hosts={"example.org"},
         web_fixtures={"https://example.org/a": "synthetic page"},
     )
     ok = await reg.execute("http_get", {"url": "https://example.org/a"}, call_id="a")

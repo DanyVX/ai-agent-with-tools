@@ -49,9 +49,7 @@ class BudgetedClient:
             + Decimal(max_tokens) * self.output_rate
         ) / Decimal("1000000")
         request_id = uuid.uuid4().hex
-        self.ledger.reserve(
-            request_id=request_id, run_id=self.run_id, maximum_usd=ceiling
-        )
+        self.ledger.reserve(request_id=request_id, run_id=self.run_id, maximum_usd=ceiling)
         # On error, reservation remains held as an ambiguous provider spend.
         result = await self.client.complete(
             messages, tools, max_tokens=max_tokens, temperature=temperature

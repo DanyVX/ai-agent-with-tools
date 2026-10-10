@@ -9,11 +9,7 @@ def wilson(success: int, total: int, z: float = 1.96) -> tuple[float, float]:
     p = success / total
     denominator = 1 + z * z / total
     center = (p + z * z / (2 * total)) / denominator
-    half = (
-        z
-        * math.sqrt((p * (1 - p) + z * z / (4 * total)) / total)
-        / denominator
-    )
+    half = z * math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denominator
     return max(0.0, center - half), min(1.0, center + half)
 
 

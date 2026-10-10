@@ -4,10 +4,11 @@ import hashlib
 import json
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from agentx.guard.policy import redact
 
@@ -57,27 +58,26 @@ class TraceRecorder:
                 stream.flush()
 
     @contextmanager
-    def span(
-        self, name: str, *, attributes: dict[str, Any] | None = None
-    ) -> Iterator[None]:
+    def span(self, name: str, *, attributes: dict[str, Any] | None = None) -> Iterator[None]:
         start = time.monotonic_ns()
         try:
             yield
         except Exception:
             self.emit(
-                name, status="error", elapsed_ns=time.monotonic_ns() - start,
+                name,
+                status="error",
+                elapsed_ns=time.monotonic_ns() - start,
                 attributes=attributes,
             )
             raise
         else:
-            self.emit(
-                name, elapsed_ns=time.monotonic_ns() - start, attributes=attributes
-            )
+            self.emit(name, elapsed_ns=time.monotonic_ns() - start, attributes=attributes)
 
     def records(self) -> list[dict[str, Any]]:
         if not self.path.exists():
             return []
         return [
-            json.loads(line) for line in self.path.read_text(encoding="utf-8").splitlines()
+            json.loads(line)
+            for line in self.path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]

@@ -15,9 +15,9 @@ _SECRET = re.compile(r"(?i)\b(?:sk-[a-zA-Z0-9_-]{12,}|(?:api[_-]?key|token)\s*[:
 
 def redact(value: str) -> str:
     """Best-effort PII/secret redaction, not a substitute for data minimization."""
-    return _SECRET.sub("[REDACTED_SECRET]", _PHONE.sub(
-        "[REDACTED_PHONE]", _EMAIL.sub("[REDACTED_EMAIL]", value)
-    ))
+    return _SECRET.sub(
+        "[REDACTED_SECRET]", _PHONE.sub("[REDACTED_PHONE]", _EMAIL.sub("[REDACTED_EMAIL]", value))
+    )
 
 
 @dataclass
@@ -46,7 +46,8 @@ class GuardedExecutor:
     ) -> list[ToolResult]:
         permitted = allowed & self.policy.permitted
         effects = [
-            name for name, _, _ in calls
+            name
+            for name, _, _ in calls
             if self.registry.get(name) and self.registry.get(name).side_effect
         ]
         if len(effects) > 1:
@@ -72,19 +73,30 @@ class GuardedExecutor:
             tool = self.registry.get(name)
             if tool is not None and tool.side_effect:
                 request = ApprovalRequest(
-                    tool=name, arguments=args.copy(), call_id=call_id,
+                    tool=name,
+                    arguments=args.copy(),
+                    call_id=call_id,
                     provenance=provenance or [],
                 )
                 decision = await self.gate.decide(request)
                 if not decision.approved:
                     results[idx] = ToolResult(
-                        name, call_id, False, error="approval denied/expired", code="approval_denied"
+                        name,
+                        call_id,
+                        False,
+                        error="approval denied/expired",
+                        code="approval_denied",
                     )
                     continue
-                arguments = decision.edited_arguments if decision.edited_arguments is not None else args
+                arguments = (
+                    decision.edited_arguments if decision.edited_arguments is not None else args
+                )
                 if not isinstance(arguments, dict):
                     results[idx] = ToolResult(
-                        name, call_id, False, error="invalid edited arguments",
+                        name,
+                        call_id,
+                        False,
+                        error="invalid edited arguments",
                         code="invalid_arguments",
                     )
                     continue

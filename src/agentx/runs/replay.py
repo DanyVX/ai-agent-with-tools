@@ -41,7 +41,8 @@ class RecordingClient:
             messages, tools, max_tokens=max_tokens, temperature=temperature
         )
         self.store.record_synthetic(
-            self.run_id, self.index,
+            self.run_id,
+            self.index,
             _request(messages, tools, max_tokens, temperature),
             result.model_dump(mode="json"),
         )
@@ -66,7 +67,8 @@ class ReplayClient:
         temperature: float = 0,
     ) -> LLMResponse:
         data = self.store.replay_synthetic(
-            self.run_id, self.index,
+            self.run_id,
+            self.index,
             _request(messages, tools, max_tokens, temperature),
         )
         self.index += 1

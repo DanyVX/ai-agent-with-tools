@@ -6,7 +6,6 @@ import re
 import shutil
 import sys
 import uuid
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -41,16 +40,21 @@ def doctor() -> None:
     except ValidationError as exc:
         typer.echo(f"Invalid configuration: {exc.error_count()} fields")
         raise typer.Exit(2) from exc
-    typer.echo(json.dumps({
-        "python": sys.version.split()[0],
-        "provider": settings.provider.value,
-        "model_configured": bool(settings.model),
-        "allow_live": settings.allow_live,
-        "max_run_usd": str(settings.max_run_usd),
-        "max_day_usd": str(settings.max_day_usd),
-        "docker": shutil.which("docker") is not None,
-        "ffmpeg": shutil.which("ffmpeg") is not None,
-    }, indent=2))
+    typer.echo(
+        json.dumps(
+            {
+                "python": sys.version.split()[0],
+                "provider": settings.provider.value,
+                "model_configured": bool(settings.model),
+                "allow_live": settings.allow_live,
+                "max_run_usd": str(settings.max_run_usd),
+                "max_day_usd": str(settings.max_day_usd),
+                "docker": shutil.which("docker") is not None,
+                "ffmpeg": shutil.which("ffmpeg") is not None,
+            },
+            indent=2,
+        )
+    )
 
 
 async def ask_approval(request: ApprovalRequest) -> ApprovalDecision:
@@ -61,7 +65,11 @@ async def ask_approval(request: ApprovalRequest) -> ApprovalDecision:
 
 
 async def _run(
-    task: str, *, demo: bool, record_synthetic: bool, side_effects: bool,
+    task: str,
+    *,
+    demo: bool,
+    record_synthetic: bool,
+    side_effects: bool,
 ) -> dict[str, Any]:
     config = Settings()
     run_id = uuid.uuid4().hex
@@ -90,7 +98,8 @@ async def _run(
             if config.provider == Provider.ANTHROPIC:
                 assert config.anthropic_api_key is not None
                 adapter = AnthropicAdapter(
-                    http, endpoint="https://api.anthropic.com/v1/messages",
+                    http,
+                    endpoint="https://api.anthropic.com/v1/messages",
                     model=config.model,
                     headers={
                         "x-api-key": config.anthropic_api_key.get_secret_value(),
@@ -101,11 +110,10 @@ async def _run(
             else:
                 assert config.openai_api_key is not None
                 adapter = OpenAICompatibleAdapter(
-                    http, endpoint=config.openai_base_url.rstrip("/") + "/chat/completions",
+                    http,
+                    endpoint=config.openai_base_url.rstrip("/") + "/chat/completions",
                     model=config.model,
-                    headers={
-                        "authorization": f"Bearer {config.openai_api_key.get_secret_value()}"
-                    },
+                    headers={"authorization": f"Bearer {config.openai_api_key.get_secret_value()}"},
                 )
             ledger = SpendLedger(
                 Path(config.budget_db_path),
@@ -113,7 +121,9 @@ async def _run(
                 per_day_usd=config.max_day_usd,
             )
             client = BudgetedClient(
-                adapter, ledger, run_id=run_id,
+                adapter,
+                ledger,
+                run_id=run_id,
                 max_input_tokens=config.max_input_tokens,
                 input_per_million_usd=config.input_usd_per_million,
                 output_per_million_usd=config.output_usd_per_million,
@@ -123,8 +133,12 @@ async def _run(
                 raise ValueError("Recording is restricted to reviewed synthetic --demo runs")
             client = RecordingClient(client, store, run_id)
         runtime = AgentRunner(
-            client, registry, allowed_tools=allowed, guarded_executor=guard,
-            limits=RunLimits(), store=store,
+            client,
+            registry,
+            allowed_tools=allowed,
+            guarded_executor=guard,
+            limits=RunLimits(),
+            store=store,
             trace_path=str(workspace / "traces" / f"{run_id}.jsonl"),
         )
         outcome = await runtime.run(task, run_id=run_id)
@@ -136,15 +150,25 @@ def run_task(
     task: str,
     demo: bool = typer.Option(False, help="Run a scripted arithmetic demo, not a real LLM"),
     record_synthetic: bool = typer.Option(False, help="Opt in to synthetic cassette recording"),
-    side_effects: bool = typer.Option(False, help="Enable interactive approval for mock side effects"),
+    side_effects: bool = typer.Option(
+        False, help="Enable interactive approval for mock side effects"
+    ),
 ) -> None:
     """Run bounded agent, default offline. Use --demo for a reproducible example."""
     try:
-        typer.echo(json.dumps(
-            asyncio.run(_run(task, demo=demo, record_synthetic=record_synthetic,
-                             side_effects=side_effects)),
-            indent=2,
-        ))
+        typer.echo(
+            json.dumps(
+                asyncio.run(
+                    _run(
+                        task,
+                        demo=demo,
+                        record_synthetic=record_synthetic,
+                        side_effects=side_effects,
+                    )
+                ),
+                indent=2,
+            )
+        )
     except (ValidationError, RuntimeError, ValueError) as exc:
         console.print(f"[red]Run unavailable:[/red] {type(exc).__name__}: {exc}")
         raise typer.Exit(code=2) from exc
@@ -160,11 +184,16 @@ def eval(
 
     outcome = asyncio.run(evaluate(output, repeats))
     console.print("OFFLINE SCRIPTED CHECKS ONLY. No real-model claims.")
-    console.print(json.dumps({
-        "output": str(output),
-        "benign": outcome["synthetic_benign_runtime_pass"],
-        "mock_exfil_prevented": outcome["synthetic_mock_exfil_prevented"],
-    }, indent=2))
+    console.print(
+        json.dumps(
+            {
+                "output": str(output),
+                "benign": outcome["synthetic_benign_runtime_pass"],
+                "mock_exfil_prevented": outcome["synthetic_mock_exfil_prevented"],
+            },
+            indent=2,
+        )
+    )
 
 
 @app.command()
@@ -193,9 +222,15 @@ def replay(run_id: str, task: str) -> None:
         registry = make_registry(sandbox)
         store = RunStore(Path(".local/runs.sqlite3"), allow_synthetic_replay=True)
         runtime = AgentRunner(
-            ReplayClient(store, run_id), registry,
+            ReplayClient(store, run_id),
+            registry,
             allowed_tools={
-                "calculator", "read_file", "list_dir", "search_files", "sql_query", "http_get"
+                "calculator",
+                "read_file",
+                "list_dir",
+                "search_files",
+                "sql_query",
+                "http_get",
             },
         )
         return (await runtime.run(task)).model_dump(mode="json")

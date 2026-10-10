@@ -17,7 +17,8 @@ class DemoClient:
         temperature: float = 0,
     ) -> LLMResponse:
         observations = [
-            m["content"] for m in messages
+            m["content"]
+            for m in messages
             if m["role"] == "user" and "<untrusted_tool_result>" in str(m["content"])
         ]
         usage = Usage(input_tokens=10, output_tokens=10, estimated=True)
@@ -27,7 +28,8 @@ class DemoClient:
             if not data["ok"]:
                 return LLMResponse(
                     text="The calculator tool failed; I cannot verify the answer.",
-                    usage=usage, stop_reason="stop",
+                    usage=usage,
+                    stop_reason="stop",
                 )
             output = json.loads(data["output"])
             answer = json.dumps(
@@ -40,11 +42,13 @@ class DemoClient:
         if not found:
             return LLMResponse(
                 text="Demo supports a simple arithmetic expression, e.g. calculate 2 + 2.",
-                usage=usage, stop_reason="stop",
+                usage=usage,
+                stop_reason="stop",
             )
         return LLMResponse(
             tool_calls=[
                 ToolCall(id="demo-call-1", name="calculator", arguments={"expression": found[1]})
             ],
-            usage=usage, stop_reason="tool_calls",
+            usage=usage,
+            stop_reason="tool_calls",
         )

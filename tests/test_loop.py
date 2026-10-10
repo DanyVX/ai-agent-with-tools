@@ -29,8 +29,10 @@ class FakeLLM:
 
 def response(text: str = "", calls: list[ToolCall] | None = None) -> LLMResponse:
     return LLMResponse(
-        text=text, tool_calls=calls or [],
-        usage=Usage(input_tokens=3, output_tokens=2), stop_reason="stop",
+        text=text,
+        tool_calls=calls or [],
+        usage=Usage(input_tokens=3, output_tokens=2),
+        stop_reason="stop",
     )
 
 
@@ -38,9 +40,9 @@ def response(text: str = "", calls: list[ToolCall] | None = None) -> LLMResponse
 async def test_single_tool_then_final(tmp_path: Any) -> None:
     c = ToolCall(id="id1", name="calculator", arguments={"expression": "2+2"})
     client = FakeLLM([response(calls=[c]), response('{"answer":"4","citations":["id1"]}')])
-    run = await AgentRunner(
-        client, make_registry(tmp_path), allowed_tools={"calculator"}
-    ).run("calculate 2+2")
+    run = await AgentRunner(client, make_registry(tmp_path), allowed_tools={"calculator"}).run(
+        "calculate 2+2"
+    )
     assert run.outcome == "completed"
     assert run.answer == "4"
     assert run.citations == ["id1"]
@@ -58,7 +60,9 @@ async def test_step_cap(tmp_path: Any) -> None:
     c = ToolCall(id="id1", name="calculator", arguments={"expression": "2+2"})
     client = FakeLLM([response(calls=[c])])
     runner = AgentRunner(
-        client, make_registry(tmp_path), allowed_tools={"calculator"},
+        client,
+        make_registry(tmp_path),
+        allowed_tools={"calculator"},
         limits=RunLimits(max_steps=1),
     )
     assert (await runner.run("task")).outcome == "budget_exceeded"
@@ -68,7 +72,9 @@ async def test_step_cap(tmp_path: Any) -> None:
 async def test_token_cap(tmp_path: Any) -> None:
     client = FakeLLM([response("done")])
     runner = AgentRunner(
-        client, make_registry(tmp_path), allowed_tools=set(),
+        client,
+        make_registry(tmp_path),
+        allowed_tools=set(),
         limits=RunLimits(max_tokens=5),
     )
     assert (await runner.run("task")).outcome == "budget_exceeded"
@@ -85,9 +91,9 @@ async def test_model_asks_user(tmp_path: Any) -> None:
 async def test_loop_detection(tmp_path: Any) -> None:
     same = ToolCall(id="id1", name="calculator", arguments={"expression": "2+2"})
     client = FakeLLM([response(calls=[same]) for _ in range(5)])
-    result = await AgentRunner(
-        client, make_registry(tmp_path), allowed_tools={"calculator"}
-    ).run("task")
+    result = await AgentRunner(client, make_registry(tmp_path), allowed_tools={"calculator"}).run(
+        "task"
+    )
     assert result.outcome == "loop_detected"
 
 

@@ -234,23 +234,43 @@ def make_registry(
         if "@" not in arg.to:
             raise ValueError("invalid recipient")
         return await _write_once(
-            "outbox", arg.idempotency_key,
+            "outbox",
+            arg.idempotency_key,
             {"to": arg.to, "subject": arg.subject, "body": arg.body, "mock": True},
         )
 
     definitions = [
-        ("calculator", "Safely evaluate + - * / and parentheses", CalculatorArgs, calculator, False),
+        (
+            "calculator",
+            "Safely evaluate + - * / and parentheses",
+            CalculatorArgs,
+            calculator,
+            False,
+        ),
         ("read_file", "Read a UTF-8 file under sandbox root", PathArgs, read_file, False),
         ("list_dir", "List a sandbox directory", PathArgs, list_dir, False),
         ("search_files", "Find text in sandbox files", SearchArgs, search_files, False),
         ("http_get", "Retrieve reviewed offline HTTPS fixture", HttpArgs, http_get, False),
         ("sql_query", "Read-only SELECT on synthetic sample SQLite DB", SQLArgs, sql_query, False),
         ("write_note", "Create an approved, idempotent sandbox note", NoteArgs, write_note, True),
-        ("send_email_mock", "Create approved mock outbox entry, never sends", EmailArgs, send_email_mock, True),
+        (
+            "send_email_mock",
+            "Create approved mock outbox entry, never sends",
+            EmailArgs,
+            send_email_mock,
+            True,
+        ),
     ]
     for name, description, model, handler, effect in definitions:
         registry.register(
-            Tool(name=name, description=description, arguments=model, handler=handler,
-                 side_effect=effect, timeout_s=5, max_output_chars=4096)
+            Tool(
+                name=name,
+                description=description,
+                arguments=model,
+                handler=handler,
+                side_effect=effect,
+                timeout_s=5,
+                max_output_chars=4096,
+            )
         )
     return registry
