@@ -32,6 +32,15 @@ jobs:
             git push origin HEAD:m7-cli-release
           fi
 
+      - name: Create a reproducible uv lockfile
+        run: |
+          python -m pip install "uv==0.10.0"
+          uv lock --python 3.11
+          git add uv.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: pin Python dependencies with uv.lock"
+            git push origin HEAD:m7-cli-release
+          fi
       - name: Prepare an exact tracked-source snapshot
         run: git archive --format=zip -o /tmp/agentx-source.zip HEAD
       - uses: actions/upload-artifact@v4
