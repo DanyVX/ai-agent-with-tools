@@ -6,8 +6,8 @@ import json
 import operator
 import re
 import sqlite3
-from contextlib import closing
 from collections.abc import Awaitable, Callable
+from contextlib import closing
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
