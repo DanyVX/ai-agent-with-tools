@@ -31,3 +31,11 @@ jobs:
             git commit -m "style: apply verified Ruff normalization"
             git push origin HEAD:m7-cli-release
           fi
+
+      - name: Prepare an exact tracked-source snapshot
+        run: git archive --format=zip -o /tmp/agentx-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentx-source
+          path: /tmp/agentx-source.zip
+          retention-days: 1
