@@ -43,7 +43,7 @@ def test_corrupt_or_forged_cassette_rejected(tmp_path: Path) -> None:
         CassetteStore(tmp_path).replay(request)
 
 
-@pytest.mark.parametrize("request", [{"a": float("nan")}, {"a": object()}])
-def test_non_json_request_rejected(request: dict[str, object]) -> None:
+@pytest.mark.parametrize("payload", [{"a": float("nan")}, {"a": object()}])
+def test_non_json_request_rejected(payload: dict[str, object]) -> None:
     with pytest.raises(CassetteInvalid, match="canonical JSON"):
-        request_fingerprint(request)
+        request_fingerprint(payload)
