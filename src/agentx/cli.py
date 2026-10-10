@@ -116,7 +116,7 @@ async def _run(
                     http,
                     endpoint=config.openai_base_url.rstrip("/") + "/chat/completions",
                     model=config.model,
-                    headers={"authorization": f"Bearer {config.openai_api_key.get_secret_value()}"},
+                    headers={"authorization": f"Bearer {token}"},
                 )
             if config.is_local_provider():
                 client = adapter
