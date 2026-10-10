@@ -1,0 +1,30 @@
+name: Source Snapshot
+on:
+  push:
+    branches: [m7-cli-release]
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package tracked source
+        run: git archive --format=zip --output agentx-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentx-source
+          path: agentx-source.zip
+          retention-days: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download isolated dev tooling wheels for offline verification
+        run: |
+          mkdir -p wheels
+          python -m pip download --only-binary=:all: -d wheels 'ruff==0.17.0' 'mypy==2.4.0'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentx-dev-tooling
+          path: wheels/*.whl
+          retention-days: 1

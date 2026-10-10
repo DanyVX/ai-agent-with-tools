@@ -6,7 +6,8 @@ import json
 import operator
 import re
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
+from contextlib import closing
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -198,7 +199,7 @@ def make_registry(
         if not db.is_file():
             raise ValueError("sample database missing")
         uri = f"file:{db.as_posix()}?mode=ro"
-        with sqlite3.connect(uri, uri=True, timeout=2) as connection:
+        with closing(sqlite3.connect(uri, uri=True, timeout=2)) as connection, connection:
             connection.execute("PRAGMA query_only=ON")
             cursor = connection.execute(q)
             rows = cursor.fetchmany(101)
@@ -215,9 +216,9 @@ def make_registry(
             with path.open("x", encoding="utf-8") as file:
                 file.write(data)
             return {"record_id": key, "created": True}
-        except FileExistsError:
+        except FileExistsError as exc:
             if path.read_text(encoding="utf-8") != data:
-                raise ValueError("idempotency key collision")
+                raise ValueError("idempotency key collision") from exc
             return {"record_id": key, "created": False}
 
     async def write_note(arg: StrictArgs) -> Any:
@@ -234,23 +235,45 @@ def make_registry(
         if "@" not in arg.to:
             raise ValueError("invalid recipient")
         return await _write_once(
-            "outbox", arg.idempotency_key,
+            "outbox",
+            arg.idempotency_key,
             {"to": arg.to, "subject": arg.subject, "body": arg.body, "mock": True},
         )
 
-    definitions = [
-        ("calculator", "Safely evaluate + - * / and parentheses", CalculatorArgs, calculator, False),
+    definitions: list[
+        tuple[str, str, type[StrictArgs], Callable[[StrictArgs], Awaitable[Any]], bool]
+    ] = [
+        (
+            "calculator",
+            "Safely evaluate + - * / and parentheses",
+            CalculatorArgs,
+            calculator,
+            False,
+        ),
         ("read_file", "Read a UTF-8 file under sandbox root", PathArgs, read_file, False),
         ("list_dir", "List a sandbox directory", PathArgs, list_dir, False),
         ("search_files", "Find text in sandbox files", SearchArgs, search_files, False),
         ("http_get", "Retrieve reviewed offline HTTPS fixture", HttpArgs, http_get, False),
         ("sql_query", "Read-only SELECT on synthetic sample SQLite DB", SQLArgs, sql_query, False),
         ("write_note", "Create an approved, idempotent sandbox note", NoteArgs, write_note, True),
-        ("send_email_mock", "Create approved mock outbox entry, never sends", EmailArgs, send_email_mock, True),
+        (
+            "send_email_mock",
+            "Create approved mock outbox entry, never sends",
+            EmailArgs,
+            send_email_mock,
+            True,
+        ),
     ]
     for name, description, model, handler, effect in definitions:
         registry.register(
-            Tool(name=name, description=description, arguments=model, handler=handler,
-                 side_effect=effect, timeout_s=5, max_output_chars=4096)
+            Tool(
+                name=name,
+                description=description,
+                arguments=model,
+                handler=handler,
+                side_effect=effect,
+                timeout_s=5,
+                max_output_chars=4096,
+            )
         )
     return registry

@@ -7,6 +7,8 @@ recording is for synthetic test tasks only; opt-in is mandatory.
 import json
 import sqlite3
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -39,8 +41,14 @@ class RunStore:
                 "PRIMARY KEY(run_id,index_no))"
             )
 
-    def _connection(self) -> sqlite3.Connection:
-        return sqlite3.connect(self.path, timeout=10)
+    @contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        conn = sqlite3.connect(self.path, timeout=10)
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def save(self, run_id: str, status: str, payload: dict[str, Any]) -> None:
         safe = redact(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
@@ -80,14 +88,11 @@ class RunStore:
         data = json.dumps(response, ensure_ascii=False, sort_keys=True, allow_nan=False)
         with self._lock, self._connection() as c:
             c.execute(
-                "INSERT INTO responses (run_id,index_no,request_hash,response) "
-                "VALUES (?,?,?,?)",
+                "INSERT INTO responses (run_id,index_no,request_hash,response) VALUES (?,?,?,?)",
                 (run_id, index, fingerprint, data),
             )
 
-    def replay_synthetic(
-        self, run_id: str, index: int, request: dict[str, Any]
-    ) -> dict[str, Any]:
+    def replay_synthetic(self, run_id: str, index: int, request: dict[str, Any]) -> dict[str, Any]:
         if not self.allow_synthetic_replay:
             raise PermissionError("raw synthetic replay requires explicit opt-in")
         with self._connection() as c:

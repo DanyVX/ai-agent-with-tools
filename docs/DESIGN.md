@@ -1,36 +1,36 @@
-# Design and engineering decisions
+# Design and decision log
 
-## Scope
-Build a small, inspectable, fail-safe tool-using runtime, not an autonomy
-framework, browser agent or multi-agent swarm. This document records decisions
-rather than asserting that future components are already implemented.
+**Scope:** Small audited core with narrow tool contracts, not general autonomy, browser control, or multi-agent delegation.
 
 ## Decision log
 
-| Date | Options considered | Decision | Rationale |
+| Date | Options | Choice | Reason |
 | --- | --- | --- | --- |
-| 2026-10-10 | Paid API by default; local model by default; offline cassette by default | Offline cassette default | Deterministic tests, zero accidental paid requests; M1 adds separate Anthropic and OpenAI-compatible adapters (including Ollama) |
-| 2026-10-10 | Float USD; Decimal; integer micro-USD | Decimal config + integer micro-USD ledger | Avoid float drift; conservative ROUND_UP; atomic reservations in SQLite |
-| 2026-10-10 | Auto-record provider output; reviewed fixture-only replay | Reviewed fixture-only replay | No silent real network usage or unreviewed PII/secrets in fixture files |
-| 2026-10-10 | Framework agent runtime; custom bounded core | Custom asyncio core in future milestone | Exposes tool state and failure handling to reviewers; avoids hiding budgets behind a framework |
-| 2026-10-10 | OpenTelemetry SDK; JSONL spans | Defer tracer choice to M5 | Avoid claiming compatibility before tracing is implemented |
+| 2026-10-10 | Agent framework vs explicit loop | Explicit asyncio runtime | All tool calls, approvals and budgets remain inspectable |
+| 2026-10-10 | Single provider vs protocol | Provider-normalized `LLMClient` | Offline cassettes, Anthropic and OpenAI-compatible tests share a contract |
+| 2026-10-10 | Raw model outputs vs typed contract | Pydantic normalized `LLMResponse` | Malformed JSON cannot silently call a tool |
+| 2026-10-10 | Floating cost vs integer ledger | Decimal input, SQLite micro-USD reservations | Avoid floating error, serialize concurrent reservations |
+| 2026-10-10 | Unreviewed web requests vs offline fixture | Offline `http_get` only | A naive allowlist does not prevent DNS rebinding; fail safely |
+| 2026-10-10 | Automatic side effects vs user approval | Exact-argument explicit approval | Model-generated requests are not authorization |
+| 2026-10-10 | Raw trace vs protected previews | Redacted SHA + bounded preview | Minimize private-data retention and log sizes |
+| 2026-10-10 | Large general eval claims vs synthetic programmatic tests | 40+30 scripted fixtures | Verify mechanics without inventing LLM success rates |
+| 2026-10-10 | Embedded framework tracing vs JSONL | JSONL spans + SQLite outcomes | Inspectable, portable debugging; OTel exporter postponed |
+| 2026-10-10 | Silent cassette re-recording vs strict matching | SHA256 request hash + fail on drift | No accidental external requests or changed fixture behavior |
 
-## Spend model
-`SpendLedger.reserve()` must be called *before* a paid request with a
-conservative **upper bound** on cost and unique request ID. Reservations count
-against both run and UTC-day limits; SQLite transactions serialize concurrent
-reservations. `settle()` stores actual cost. If an estimate proves too low,
-actual overspend is recorded and a `BudgetExceeded` error is raised. The API
-cannot undo spending that a provider has already charged. Crashed/incomplete
-requests remain reserved until audited, never automatically refunded.
+## Contracts
 
-The budget ledger is implemented in M0, but live adapters aren't. M1 must
-ensure every live request uses it and explicitly documents per-model price
-sources, token ceilings and cost estimation limitations.
+`LLMClient.complete(messages, tools, max_tokens, temperature)` returns text, typed tool calls, usage (estimated flagged), and stop reason. Invalid provider payloads raise typed errors; tool validators reject unknown arguments.
 
-## Decisions pending
-- User-approved maximum spend **per run** and **per UTC day**.
-- Which Anthropic and OpenAI-compatible model IDs and verified prices to use.
-- Whether local Ollama is CPU-feasible on the user's Windows laptop.
-- Generate and check in `uv.lock` on a networked development machine.
-- Choose and document the exact provider fixture format for M1.
+`ToolRegistry` decides valid tool names and schemas. `GuardedExecutor` restricts capabilities through code policy, checks outbound synthetic canaries and consults an external approval callback for side-effect tools. `AgentRunner` never promotes tool observations into policy instructions.
+
+## Cost-bound details
+
+A paid provider is unavailable until all of the following are explicitly configured: an opt-in flag, model ID, credentials, auditable per-token pricing, and positive run/day dollar caps. `BudgetedClient` reserves based on configured **maximum** input tokens and allowed output tokens. Reservations are atomic; actual usage is settled afterward. If actual billing exceeds the reservation, overspend is recorded and future requests blocked, but past provider charges cannot be undone. Missing usage is estimated and marked as uncertain.
+
+## Replay
+
+An exact cassette hash includes messages, selected tool schemas, temperature and max tokens. Missing hashes fail, never re-record automatically. Synthetic run recording needs an explicit flag and original task is needed for replay. Real user prompts are never recorded this way by default.
+
+## Not claimed
+
+Real-model benchmark quality, verified injection immunity, true OpenTelemetry interoperability, unrestricted safe web browsing, performance on production biometric data, model-license commercial clearance or a hardened multi-tenant deployment.

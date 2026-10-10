@@ -85,7 +85,9 @@ class ToolRegistry:
         if tool is None:
             return ToolResult(name, call_id, False, error="unknown tool", code="unknown_tool")
         if tool.side_effect and not approved:
-            return ToolResult(name, call_id, False, error="approval required", code="approval_required")
+            return ToolResult(
+                name, call_id, False, error="approval required", code="approval_required"
+            )
         try:
             validated = tool.arguments.model_validate(raw_arguments)
         except ValidationError as exc:
@@ -125,7 +127,11 @@ class ToolRegistry:
     ) -> list[ToolResult]:
         if max_concurrency < 1 or max_concurrency > 16:
             raise ValueError("invalid max_concurrency")
-        effects = [name for name, _, _ in calls if self.get(name) and self.get(name).side_effect]
+        effects = [
+            name
+            for name, _, _ in calls
+            if (tool := self.get(name)) is not None and tool.side_effect
+        ]
         if len(effects) > 1:
             return [
                 ToolResult(name, call_id, False, error="conflicting side effects", code="conflict")
@@ -135,7 +141,9 @@ class ToolRegistry:
 
         async def invoke(name: str, args: dict[str, Any], call_id: str) -> ToolResult:
             if name not in allowed:
-                return ToolResult(name, call_id, False, error="tool denied by policy", code="denied")
+                return ToolResult(
+                    name, call_id, False, error="tool denied by policy", code="denied"
+                )
             async with semaphore:
                 return await self.execute(name, args, call_id=call_id)
 

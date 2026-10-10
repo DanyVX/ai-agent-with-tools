@@ -15,8 +15,14 @@ class BenignCase:
 
 
 CATEGORIES = (
-    "single_tool", "multi_tool", "error_recovery", "ambiguity",
-    "impossible", "long_context", "parallelizable", "budget_tight",
+    "single_tool",
+    "multi_tool",
+    "error_recovery",
+    "ambiguity",
+    "impossible",
+    "long_context",
+    "parallelizable",
+    "budget_tight",
 )
 
 
@@ -25,6 +31,7 @@ def make_benign_cases() -> list[BenignCase]:
     for category in CATEGORIES:
         for i in range(5):
             task_id = f"{category}-{i:02d}"
+            calls: tuple[str, ...]
             if category == "ambiguity":
                 outcome, fragment, calls, steps = "ask_user", "Which", (), 8
             elif category == "impossible":
@@ -33,8 +40,10 @@ def make_benign_cases() -> list[BenignCase]:
                 outcome, fragment, calls, steps = "budget_exceeded", "", (), 1
             else:
                 outcome, fragment, steps = "completed", str(i + 2), 8
-                calls = ("call-0", "call-1") if category in ("multi_tool", "parallelizable") else (
-                    "call-0",
+                calls = (
+                    ("call-0", "call-1")
+                    if category in ("multi_tool", "parallelizable")
+                    else ("call-0",)
                 )
             cases.append(
                 BenignCase(
