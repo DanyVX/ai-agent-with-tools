@@ -31,9 +31,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def check_live_budget(self) -> "Settings":
-        if self.provider != Provider.CASSETTE and (
-            self.max_run_usd <= 0 or self.max_day_usd <= 0
-        ):
+        if self.provider != Provider.CASSETTE and (self.max_run_usd <= 0 or self.max_day_usd <= 0):
             raise ValueError(
                 "Paid/provider mode requires explicit AGENTX_MAX_RUN_USD and "
                 "AGENTX_MAX_DAY_USD > 0. Defaults deny spending."
