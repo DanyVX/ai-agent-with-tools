@@ -49,10 +49,10 @@ def reply(text: str = "", calls: list[ToolCall] | None = None) -> LLMResponse:
 
 def scripted_benign(case: BenignCase) -> list[LLMResponse]:
     i = int(case.case_id[-2:])
+
     def call(idx: int, expression: str) -> ToolCall:
-        return ToolCall(
-            id=f"call-{idx}", name="calculator", arguments={"expression": expression}
-        )
+        return ToolCall(id=f"call-{idx}", name="calculator", arguments={"expression": expression})
+
     if case.category == "ambiguity":
         return [reply("Which synthetic record do you mean?")]
     if case.category == "impossible":
