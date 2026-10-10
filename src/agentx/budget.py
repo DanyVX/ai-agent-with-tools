@@ -5,9 +5,11 @@ Actual usage settles a reservation. This module never makes provider calls.
 """
 
 import sqlite3
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from decimal import ROUND_UP, Decimal
 from pathlib import Path
+from typing import Iterator
 
 _MICRO = Decimal("1000000")
 
@@ -51,10 +53,15 @@ class SpendLedger:
                 )"""
             )
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.path, timeout=10)
-        conn.execute("PRAGMA busy_timeout=10000")
-        return conn
+        try:
+            conn.execute("PRAGMA busy_timeout=10000")
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     @staticmethod
     def _day(at: datetime | None) -> str:
