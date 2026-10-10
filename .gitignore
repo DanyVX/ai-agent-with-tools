@@ -1,0 +1,34 @@
+# Environments and local state
+.venv/
+.env
+.env.*
+!.env.example
+.local/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+# Datasets and models must not be committed
+datasets/
+weights/
+models/
+*.onnx
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+# User data and recordings
+outbox/
+notes/
+*.sqlite3
+*.db
+*.mp4
+*.mov
+*.wav
