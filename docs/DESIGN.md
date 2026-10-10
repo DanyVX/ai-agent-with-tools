@@ -6,6 +6,7 @@
 
 | Date | Options | Choice | Reason |
 | --- | --- | --- | --- |
+| 2026-10-10 | Pass internal messages unchanged to providers; normalize per-provider tool messages | Normalized assistant tool calls and untrusted tool results through a separate transcript adapter | OpenAI-compatible chat completions require tool role + call IDs; Anthropic requires tool_use/tool_result blocks. Exact correlation is essential for real multi-turn runs and offline replay. |
 | 2026-10-10 | Agent framework vs explicit loop | Explicit asyncio runtime | All tool calls, approvals and budgets remain inspectable |
 | 2026-10-10 | Single provider vs protocol | Provider-normalized `LLMClient` | Offline cassettes, Anthropic and OpenAI-compatible tests share a contract |
 | 2026-10-10 | Raw model outputs vs typed contract | Pydantic normalized `LLMResponse` | Malformed JSON cannot silently call a tool |

@@ -14,3 +14,5 @@
 12. **Evaluation gaps.** The generated task classes meet basic cardinality, but truly difficult long-context, real-model ablation, replay after crash and live provider deprecation handling remain partial.
 
 These are blockers to calling this production-ready, not items to conceal.
+
+- Live multi-turn tool-call formatting now has offline provider contract coverage for Anthropic and OpenAI-compatible APIs, but real credentialed model requests are still not verified.

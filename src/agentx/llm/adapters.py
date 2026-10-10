@@ -20,6 +20,7 @@ from agentx.llm.contracts import (
     Usage,
     estimated_usage,
 )
+from agentx.llm.transcript import TranscriptError, anthropic_messages, openai_messages
 
 
 class ProviderError(RuntimeError):
@@ -109,9 +110,13 @@ class OpenAICompatibleAdapter(JSONAdapter):
         max_tokens: int = 512,
         temperature: float = 0,
     ) -> LLMResponse:
+        try:
+            normalized_messages = openai_messages(messages)
+        except TranscriptError as exc:
+            raise ProviderProtocolError("invalid internal conversation") from exc
         payload: dict[str, Any] = {
             "model": self.model,
-            "messages": messages,
+            "messages": normalized_messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": False,
@@ -173,16 +178,18 @@ class AnthropicAdapter(JSONAdapter):
         max_tokens: int = 512,
         temperature: float = 0,
     ) -> LLMResponse:
-        system_parts = [m["content"] for m in messages if m.get("role") == "system"]
-        non_system = [m for m in messages if m.get("role") != "system"]
+        try:
+            system_text, non_system = anthropic_messages(messages)
+        except TranscriptError as exc:
+            raise ProviderProtocolError("invalid internal conversation") from exc
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": non_system,
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
-        if system_parts:
-            payload["system"] = "\n".join(str(p) for p in system_parts)
+        if system_text:
+            payload["system"] = system_text
         if tools:
             payload["tools"] = [
                 {"name": t.name, "description": t.description, "input_schema": t.parameters}
