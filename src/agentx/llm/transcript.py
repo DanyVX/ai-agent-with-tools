@@ -127,9 +127,7 @@ def anthropic_messages(
                 "is_error": is_error,
             }
             # Consecutive parallel results belong in the same user turn.
-            if output and output[-1]["role"] == "user" and isinstance(
-                output[-1]["content"], list
-            ):
+            if output and output[-1]["role"] == "user" and isinstance(output[-1]["content"], list):
                 output[-1]["content"].append(block)
             else:
                 output.append({"role": "user", "content": [block]})

@@ -31,32 +31,38 @@ async def test_two_turn_provider_tool_round_trip(provider: str, tmp_path: Path) 
                 return httpx.Response(
                     200,
                     json={
-                        "choices": [{
-                            "message": {
-                                "content": None,
-                                "tool_calls": [{
-                                    "id": "call-1",
-                                    "type": "function",
-                                    "function": {
-                                        "name": "calculator",
-                                        "arguments": '{"expression":"2+2"}',
-                                    },
-                                }],
-                            },
-                            "finish_reason": "tool_calls",
-                        }],
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": None,
+                                    "tool_calls": [
+                                        {
+                                            "id": "call-1",
+                                            "type": "function",
+                                            "function": {
+                                                "name": "calculator",
+                                                "arguments": '{"expression":"2+2"}',
+                                            },
+                                        }
+                                    ],
+                                },
+                                "finish_reason": "tool_calls",
+                            }
+                        ],
                         "usage": {"prompt_tokens": 8, "completion_tokens": 7},
                     },
                 )
             return httpx.Response(
                 200,
                 json={
-                    "content": [{
-                        "type": "tool_use",
-                        "id": "call-1",
-                        "name": "calculator",
-                        "input": {"expression": "2+2"},
-                    }],
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "call-1",
+                            "name": "calculator",
+                            "input": {"expression": "2+2"},
+                        }
+                    ],
                     "usage": {"input_tokens": 8, "output_tokens": 7},
                     "stop_reason": "tool_use",
                 },
@@ -71,10 +77,12 @@ async def test_two_turn_provider_tool_round_trip(provider: str, tmp_path: Path) 
             assert messages[3]["tool_call_id"] == "call-1"
             result_text = messages[3]["content"]
             response = {
-                "choices": [{
-                    "message": {"content": '{"answer":"4","citations":["call-1"]}'},
-                    "finish_reason": "stop",
-                }],
+                "choices": [
+                    {
+                        "message": {"content": '{"answer":"4","citations":["call-1"]}'},
+                        "finish_reason": "stop",
+                    }
+                ],
                 "usage": {"prompt_tokens": 21, "completion_tokens": 8},
             }
         else:
@@ -93,10 +101,12 @@ async def test_two_turn_provider_tool_round_trip(provider: str, tmp_path: Path) 
             assert result["is_error"] is False
             result_text = result["content"]
             response = {
-                "content": [{
-                    "type": "text",
-                    "text": '{"answer":"4","citations":["call-1"]}',
-                }],
+                "content": [
+                    {
+                        "type": "text",
+                        "text": '{"answer":"4","citations":["call-1"]}',
+                    }
+                ],
                 "usage": {"input_tokens": 21, "output_tokens": 8},
                 "stop_reason": "end_turn",
             }
@@ -121,10 +131,14 @@ def test_parallel_tool_results_grouped_for_anthropic() -> None:
     messages = [
         {"role": "system", "content": "Safety"},
         {"role": "user", "content": "Task"},
-        {"role": "assistant", "content": "", "tool_calls": [
-            {"id": "a", "name": "calculator", "arguments": {"expression": "1+1"}},
-            {"id": "b", "name": "calculator", "arguments": {"expression": "2+2"}},
-        ]},
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"id": "a", "name": "calculator", "arguments": {"expression": "1+1"}},
+                {"id": "b", "name": "calculator", "arguments": {"expression": "2+2"}},
+            ],
+        },
         {"role": "tool", "tool_call_id": "a", "content": "2"},
         {"role": "tool", "tool_call_id": "b", "content": "denied", "is_error": True},
     ]
@@ -137,9 +151,15 @@ def test_parallel_tool_results_grouped_for_anthropic() -> None:
 
 
 def test_unicode_arguments_round_trip() -> None:
-    messages = [{"role": "assistant", "content": "", "tool_calls": [
-        {"id": "unicode", "name": "search_files", "arguments": {"term": "مرحبا 🧪"}}
-    ]}]
+    messages = [
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"id": "unicode", "name": "search_files", "arguments": {"term": "مرحبا 🧪"}}
+            ],
+        }
+    ]
     encoded = openai_messages(messages)[0]["tool_calls"][0]["function"]["arguments"]
     assert json.loads(encoded) == {"term": "مرحبا 🧪"}
 
@@ -148,13 +168,19 @@ def test_unicode_arguments_round_trip() -> None:
     "message",
     [
         {"role": "tool", "content": "missing ID"},
-        {"role": "assistant", "content": "", "tool_calls": [
-            {"id": "same", "name": "calculator", "arguments": {}},
-            {"id": "same", "name": "calculator", "arguments": {}},
-        ]},
-        {"role": "assistant", "content": "", "tool_calls": [
-            {"id": "a", "name": "calculator", "arguments": "not JSON object"}
-        ]},
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"id": "same", "name": "calculator", "arguments": {}},
+                {"id": "same", "name": "calculator", "arguments": {}},
+            ],
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [{"id": "a", "name": "calculator", "arguments": "not JSON object"}],
+        },
         {"role": "system", "content": ["not", "text"]},
         {"role": "fake_system", "content": "elevate permission"},
     ],
