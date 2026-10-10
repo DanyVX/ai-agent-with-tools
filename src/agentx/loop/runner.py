@@ -5,6 +5,7 @@ import hashlib
 import json
 import time
 import uuid
+from pathlib import Path
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, Literal
@@ -13,6 +14,8 @@ from pydantic import BaseModel, Field
 
 from agentx.guard.policy import GuardedExecutor
 from agentx.llm.contracts import LLMClient, ToolCall
+from agentx.runs.store import RunStore
+from agentx.trace.recorder import TraceRecorder
 from agentx.tools.core import ToolRegistry
 
 Outcome = Literal[
@@ -92,6 +95,8 @@ class AgentRunner:
         limits: RunLimits | None = None,
         pricing: Pricing | None = None,
         guarded_executor: GuardedExecutor | None = None,
+        store: RunStore | None = None,
+        trace_path: str | None = None,
     ) -> None:
         self.client = client
         self.registry = registry
@@ -99,9 +104,14 @@ class AgentRunner:
         self.limits = limits or RunLimits()
         self.pricing = pricing or Pricing()
         self.executor = guarded_executor or registry
+        self.store = store
+        self.trace_path = trace_path
 
     async def run(self, task: str, *, system: str = "Use tools carefully.") -> RunResult:
         run_id = uuid.uuid4().hex
+        trace = TraceRecorder(Path(self.trace_path), run_id) if self.trace_path else None
+        if self.store:
+            self.store.save(run_id, "running", {"task_length": len(task)})
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": system},
             {"role": "user", "content": task},
@@ -116,10 +126,15 @@ class AgentRunner:
         repair_count = 0
 
         def finish(outcome: Outcome, step: int, *, error: str | None = None) -> RunResult:
-            return RunResult(
+            result = RunResult(
                 run_id=run_id, outcome=outcome, steps=step, tokens=tokens,
                 estimated_usage=estimate, tool_calls=executed, error=error,
             )
+            if self.store:
+                self.store.save(run_id, outcome, result.model_dump(mode="json"))
+            if trace:
+                trace.emit("run", status=outcome, attributes={"steps": step, "tokens": tokens})
+            return result
 
         try:
             for step in range(1, self.limits.max_steps + 1):
@@ -141,6 +156,12 @@ class AgentRunner:
                     return finish("budget_exceeded", step, error="LLM call timed out")
                 except Exception as exc:
                     return finish("provider_error", step, error=type(exc).__name__)
+                if trace:
+                    trace.emit("llm", attributes={
+                        "tokens_in": response.usage.input_tokens,
+                        "tokens_out": response.usage.output_tokens,
+                        "estimated": response.usage.estimated,
+                    })
                 tokens += response.usage.input_tokens + response.usage.output_tokens
                 estimate |= response.usage.estimated
                 spent += self.pricing.charge(
@@ -208,6 +229,14 @@ class AgentRunner:
 
                 observations = await self.executor.execute_many(raw_calls, allowed=self.allowed)
                 executed.extend(r.call_id for r in observations if r.ok)
+                if trace:
+                    for observation in observations:
+                        trace.emit("tool", status="ok" if observation.ok else "error",
+                                   attributes={"name": observation.name, "code": observation.code})
+                if self.store:
+                    self.store.save(run_id, "running", {
+                        "steps": step, "tokens": tokens, "successful_calls": len(executed),
+                    })
                 if any(r.code == "invalid_arguments" for r in observations):
                     repair_count += 1
                     if repair_count > self.limits.max_tool_repairs:
