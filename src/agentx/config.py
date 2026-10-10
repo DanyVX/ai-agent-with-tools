@@ -1,13 +1,13 @@
 """Fail-closed runtime configuration. Live providers are not implemented in M0."""
 
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Provider(str, Enum):
+class Provider(StrEnum):
     CASSETTE = "cassette"
     ANTHROPIC = "anthropic"
     OPENAI_COMPAT = "openai_compat"

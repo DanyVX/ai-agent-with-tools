@@ -1,7 +1,7 @@
 """Durable, atomic and conservative spend reservations."""
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -61,7 +61,7 @@ def test_overrun_recorded_not_hidden(tmp_path: Path) -> None:
 
 def test_utc_day_partition(tmp_path: Path) -> None:
     store = ledger(tmp_path / "budget.sqlite")
-    d1 = datetime(2026, 10, 10, 23, 59, tzinfo=timezone.utc)
+    d1 = datetime(2026, 10, 10, 23, 59, tzinfo=UTC)
     d2 = d1 + timedelta(minutes=2)
     store.reserve(request_id="a", run_id="r1", maximum_usd=Decimal("0.9"), at=d1)
     store.reserve(request_id="b", run_id="r2", maximum_usd=Decimal("0.9"), at=d2)

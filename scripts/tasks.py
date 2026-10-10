@@ -37,7 +37,7 @@ def main() -> None:
         if not (ROOT / "Dockerfile").exists():
             parser.exit(2, "Docker image is not part of M0 (no Dockerfile).\n")
         commands["docker-build"] = ["docker", "build", "-t", "agentx:local", "."]
-    subprocess.run(commands[task], cwd=ROOT, check=True)
+    subprocess.run(commands[task], cwd=ROOT, check=True)  # noqa: S603 - fixed allowlist
 
 
 if __name__ == "__main__":

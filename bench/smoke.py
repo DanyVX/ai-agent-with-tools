@@ -5,10 +5,11 @@ import importlib.metadata
 import json
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Benchmark is intentionally runnable from a source checkout after installation.
@@ -16,9 +17,12 @@ from agentx.llm.cassette import request_fingerprint
 
 
 def commit_sha() -> str:
+    git = shutil.which("git")
+    if git is None:
+        return "unknown (git executable unavailable)"
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True
+            [git, "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True
         ).strip()
     except (FileNotFoundError, subprocess.CalledProcessError):
         return "unknown (source not in git checkout)"
@@ -34,7 +38,7 @@ def main() -> None:
     result = {
         "benchmark": "m0_cassette_fingerprint_smoke",
         "not_an_agent_success_metric": True,
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
         "git_commit": commit_sha(),
         "python": sys.version.split()[0],
         "platform": platform.platform(),

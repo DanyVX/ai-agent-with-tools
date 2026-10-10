@@ -5,8 +5,8 @@ Actual usage settles a reservation. This module never makes provider calls.
 """
 
 import sqlite3
-from datetime import datetime, timezone
-from decimal import Decimal, ROUND_UP
+from datetime import UTC, datetime
+from decimal import ROUND_UP, Decimal
 from pathlib import Path
 
 _MICRO = Decimal("1000000")
@@ -58,10 +58,10 @@ class SpendLedger:
 
     @staticmethod
     def _day(at: datetime | None) -> str:
-        date = at or datetime.now(timezone.utc)
+        date = at or datetime.now(UTC)
         if date.tzinfo is None or date.utcoffset() is None:
             raise ValueError("Time must be timezone aware")
-        return date.astimezone(timezone.utc).date().isoformat()
+        return date.astimezone(UTC).date().isoformat()
 
     def reserve(
         self, *, request_id: str, run_id: str, maximum_usd: Decimal, at: datetime | None = None
