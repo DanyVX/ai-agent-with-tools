@@ -1,7 +1,7 @@
 """Stable provider-independent LLM contract."""
 
 import json
-from typing import Any, Literal, Protocol
+from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 

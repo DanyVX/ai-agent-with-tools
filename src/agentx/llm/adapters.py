@@ -6,7 +6,7 @@ runtime, not directly from untrusted model/tool content.
 
 import asyncio
 import email.utils
-import random
+import secrets
 from datetime import UTC, datetime
 from typing import Any
 
@@ -76,18 +76,20 @@ class JSONAdapter:
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 if attempt + 1 == self.max_attempts:
                     raise ProviderUnavailable("provider network timeout/transport failure") from exc
-                await asyncio.sleep(min(4.0, 0.2 * (2**attempt) + random.uniform(0, 0.1)))
+                await asyncio.sleep(min(4.0, 0.2 * (2**attempt) + secrets.randbelow(100) / 1000))
                 continue
             if response.status_code == 429 or response.status_code >= 500:
                 if attempt + 1 == self.max_attempts:
-                    raise ProviderUnavailable(f"retry budget exhausted: HTTP {response.status_code}")
+                    raise ProviderUnavailable(
+                        f"retry budget exhausted: HTTP {response.status_code}"
+                    )
                 delay = _retry_after(response.headers.get("retry-after"))
                 await asyncio.sleep(min(5.0, delay if delay is not None else 0.2 * (2**attempt)))
                 continue
             if response.status_code >= 400:
                 if response.status_code in (400, 404, 410, 422):
                     raise ProviderUnavailable(
-                        f"HTTP {response.status_code}: verify model ID, availability and API configuration"
+                        f"HTTP {response.status_code}: verify model ID and availability"
                     )
                 raise ProviderUnavailable(f"non-retryable provider HTTP {response.status_code}")
             try:
@@ -155,7 +157,9 @@ class OpenAICompatibleAdapter(JSONAdapter):
                 stop_reason=choice.get("finish_reason") or "unknown",
             )
         except (KeyError, IndexError, TypeError, ValueError, ValidationError) as exc:
-            raise ProviderProtocolError("invalid OpenAI-compatible response/tool arguments") from exc
+            raise ProviderProtocolError(
+                "invalid OpenAI-compatible response/tool arguments"
+            ) from exc
 
 
 class AnthropicAdapter(JSONAdapter):
