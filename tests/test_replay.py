@@ -28,3 +28,16 @@ async def test_recorded_run_reproduces_exact_tool_sequence(tmp_path: Path) -> No
     assert replay.outcome == "completed"
     assert replay.answer == original.answer
     assert replay.tool_calls == original.tool_calls
+
+@pytest.mark.asyncio
+async def test_recording_client_first_step(tmp_path: Path) -> None:
+    from agentx.llm.contracts import ToolSpec
+
+    store = RunStore(tmp_path / "store2.db", allow_synthetic_replay=True)
+    client = RecordingClient(DemoClient(), store, "fixture-step")
+    response = await client.complete(
+        [{"role": "system", "content": "Use tools carefully."},
+         {"role": "user", "content": "calculate 5 * 3"}],
+        make_registry(tmp_path / "sandbox2").specs(allowed={"calculator"}),
+    )
+    assert response.tool_calls[0].name == "calculator"
