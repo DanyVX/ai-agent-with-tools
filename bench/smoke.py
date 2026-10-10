@@ -21,7 +21,7 @@ def commit_sha() -> str:
     if git is None:
         return "unknown (git executable unavailable)"
     try:
-        return subprocess.check_output(
+        return subprocess.check_output(  # noqa: S603 - fixed git command
             [git, "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True
         ).strip()
     except (FileNotFoundError, subprocess.CalledProcessError):
