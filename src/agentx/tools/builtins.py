@@ -215,9 +215,9 @@ def make_registry(
             with path.open("x", encoding="utf-8") as file:
                 file.write(data)
             return {"record_id": key, "created": True}
-        except FileExistsError:
+        except FileExistsError as exc:
             if path.read_text(encoding="utf-8") != data:
-                raise ValueError("idempotency key collision")
+                raise ValueError("idempotency key collision") from exc
             return {"record_id": key, "created": False}
 
     async def write_note(arg: StrictArgs) -> Any:

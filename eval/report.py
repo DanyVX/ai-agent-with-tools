@@ -18,8 +18,8 @@ def render(results: Path) -> str:
         "**Not a real LLM evaluation or prompt-injection success rate.**\n\n"
         "| Measured scripted check | Passes | Samples | Rate |\n"
         "| --- | ---: | ---: | ---: |\n"
-        f"| Benign fixtures | {benign['successes']} | {benign['samples']} | {benign['rate']:.3f} |\n"
-        f"| Mock exfil blocked | {safety['successes']} | {safety['samples']} | {safety['rate']:.3f} |\n\n"
+        f"| Benign fixtures | {benign['successes']} | {benign['samples']} | {benign['rate']:.3f} |\n"  # noqa: E501 - generated Markdown table row
+        f"| Mock exfil blocked | {safety['successes']} | {safety['samples']} | {safety['rate']:.3f} |\n\n"  # noqa: E501 - generated Markdown table row
         f"Commit: `{data['git_commit']}`  \n"
         f"Runtime: {data['python']}, {data['os']}\n\n"
         "Confidence intervals and methodology live in the machine-readable JSON.\n"

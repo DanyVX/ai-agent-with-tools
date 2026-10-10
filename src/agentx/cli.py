@@ -28,6 +28,8 @@ from agentx.runs.replay import RecordingClient, ReplayClient
 from agentx.runs.store import RunStore
 from agentx.tools.builtins import make_registry
 
+DEFAULT_EVAL_OUTPUT = Path("results/scripted-eval.json")
+
 app = typer.Typer(no_args_is_help=True, help="AgentX bounded runtime")
 console = Console()
 
@@ -177,7 +179,7 @@ def run_task(
 @app.command()
 def eval(
     repeats: int = typer.Option(3, min=1, max=20),
-    output: Path = typer.Option(Path("results/scripted-eval.json")),
+    output: Path = typer.Option(DEFAULT_EVAL_OUTPUT),
 ) -> None:
     """Run synthetic fixture tests. Not real model performance."""
     from eval.harness import evaluate
