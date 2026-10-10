@@ -224,8 +224,11 @@ class AgentRunner:
                                     "invalid_final", step, error="unverified tool citation"
                                 )
                             return finish(
-                                "completed", step, answer=str(data["answer"]),
-                                citations=citations, confidence=data.get("confidence"),
+                                "completed",
+                                step,
+                                answer=str(data["answer"]),
+                                citations=citations,
+                                confidence=data.get("confidence"),
                                 unresolved=data.get("unresolved", []),
                             )
                     except (json.JSONDecodeError, ValueError, TypeError):

@@ -129,16 +129,18 @@ async def test_approval_edits_cannot_bypass_canary(tmp_path: Path) -> None:
         ApprovalGate(approve),
     )
     result = await guard.execute_many(
-        [(
-            "send_email_mock",
-            {
-                "to": "safe@invalid.test",
-                "subject": "original",
-                "body": "hello",
-                "idempotency_key": "original1",
-            },
-            "call-1",
-        )],
+        [
+            (
+                "send_email_mock",
+                {
+                    "to": "safe@invalid.test",
+                    "subject": "original",
+                    "body": "hello",
+                    "idempotency_key": "original1",
+                },
+                "call-1",
+            )
+        ],
         allowed={"send_email_mock"},
     )
     assert result[0].code == "data_leak"
