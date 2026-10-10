@@ -77,7 +77,7 @@ async def _run(
     run_id = uuid.uuid4().hex
     workspace = Path(".local")
     sandbox = workspace / "sandbox"
-    from sandbox.bootstrap import bootstrap
+    from agentx.sample_data import bootstrap
 
     bootstrap(sandbox)
     registry = make_registry(sandbox)
@@ -111,26 +111,29 @@ async def _run(
                     },
                 )
             else:
-                assert config.openai_api_key is not None
+                token = config.openai_api_key.get_secret_value() if config.openai_api_key else ""
                 adapter = OpenAICompatibleAdapter(
                     http,
                     endpoint=config.openai_base_url.rstrip("/") + "/chat/completions",
                     model=config.model,
                     headers={"authorization": f"Bearer {config.openai_api_key.get_secret_value()}"},
                 )
-            ledger = SpendLedger(
-                Path(config.budget_db_path),
-                per_run_usd=config.max_run_usd,
-                per_day_usd=config.max_day_usd,
-            )
-            client = BudgetedClient(
-                adapter,
-                ledger,
-                run_id=run_id,
-                max_input_tokens=config.max_input_tokens,
-                input_per_million_usd=config.input_usd_per_million,
-                output_per_million_usd=config.output_usd_per_million,
-            )
+            if config.is_local_provider():
+                client = adapter
+            else:
+                ledger = SpendLedger(
+                    Path(config.budget_db_path),
+                    per_run_usd=config.max_run_usd,
+                    per_day_usd=config.max_day_usd,
+                )
+                client = BudgetedClient(
+                    adapter,
+                    ledger,
+                    run_id=run_id,
+                    max_input_tokens=config.max_input_tokens,
+                    input_per_million_usd=config.input_usd_per_million,
+                    output_per_million_usd=config.output_usd_per_million,
+                )
         if record_synthetic:
             if not demo:
                 raise ValueError("Recording is restricted to reviewed synthetic --demo runs")
