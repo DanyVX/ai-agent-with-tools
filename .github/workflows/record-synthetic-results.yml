@@ -1,0 +1,33 @@
+name: Record synthetic results
+on:
+  push:
+    branches: [m7-cli-release]
+    paths:
+      - .github/workflows/record-synthetic-results.yml
+permissions:
+  contents: write
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install selected pinned dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Execute real scripted synthetic cases and CPU smoke benchmark
+        run: |
+          python bench/smoke.py
+          python -m eval.harness --repeats 3 --output results/scripted-eval.json
+          python -m eval.report --input results/scripted-eval.json > results/scripted-report.md
+      - name: Commit the measured provenance-backed results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/m0-smoke.json results/scripted-eval.json results/scripted-report.md
+          git commit -m "test: record measured synthetic runtime results"
+          git push origin HEAD:m7-cli-release
