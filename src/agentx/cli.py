@@ -179,7 +179,7 @@ def run_task(
 @app.command()
 def eval(
     repeats: int = typer.Option(3, min=1, max=20),
-    output: Path = typer.Option(DEFAULT_EVAL_OUTPUT),
+    output: Path = typer.Option(DEFAULT_EVAL_OUTPUT),  # noqa: B008 - Typer declaration
 ) -> None:
     """Run synthetic fixture tests. Not real model performance."""
     from eval.harness import evaluate
