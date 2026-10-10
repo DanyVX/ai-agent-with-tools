@@ -19,7 +19,7 @@ class DemoClient:
         observations = [
             m["content"]
             for m in messages
-            if m["role"] == "user" and "<untrusted_tool_result>" in str(m["content"])
+            if m["role"] == "tool" and "<untrusted_tool_result>" in str(m["content"])
         ]
         usage = Usage(input_tokens=10, output_tokens=10, estimated=True)
         if observations:

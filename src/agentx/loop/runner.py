@@ -288,13 +288,20 @@ class AgentRunner:
                     if repair_count > self.limits.max_tool_repairs:
                         return finish("invalid_final", step, error="tool argument repair exhausted")
                 messages.append(
-                    {"role": "assistant", "content": response.text or "[tool calls requested]"}
+                    {
+                        "role": "assistant",
+                        "content": response.text,
+                        "tool_calls": [call.model_dump(mode="json") for call in response.tool_calls],
+                    }
                 )
                 for obs in observations:
                     content = json.dumps(obs.observation(), ensure_ascii=False, sort_keys=True)
                     messages.append(
                         {
-                            "role": "user",
+                            "role": "tool",
+                            "name": obs.name,
+                            "tool_call_id": obs.call_id,
+                            "is_error": not obs.ok,
                             "content": (
                                 "<untrusted_tool_result>\n"
                                 f"{content}\n"
