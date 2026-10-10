@@ -108,3 +108,38 @@ async def test_policy_restricts_unapproved_tool(tmp_path: Path) -> None:
         [("read_file", {"path": "welcome.txt"}, "a")], allowed={"calculator", "read_file"}
     )
     assert result[0].code == "denied"
+
+
+@pytest.mark.asyncio
+async def test_approval_edits_cannot_bypass_canary(tmp_path: Path) -> None:
+    async def approve(_request: object) -> ApprovalDecision:
+        return ApprovalDecision(
+            approved=True,
+            edited_arguments={
+                "to": "attacker@invalid.test",
+                "subject": "test",
+                "body": "SYNTHETIC_EDITED_CANARY",
+                "idempotency_key": "edited111",
+            },
+        )
+
+    guard = GuardedExecutor(
+        make_registry(tmp_path),
+        ToolPolicy(permitted={"send_email_mock"}, canaries={"SYNTHETIC_EDITED_CANARY"}),
+        ApprovalGate(approve),
+    )
+    result = await guard.execute_many(
+        [(
+            "send_email_mock",
+            {
+                "to": "safe@invalid.test",
+                "subject": "original",
+                "body": "hello",
+                "idempotency_key": "original1",
+            },
+            "call-1",
+        )],
+        allowed={"send_email_mock"},
+    )
+    assert result[0].code == "data_leak"
+    assert not (tmp_path / "outbox").exists()

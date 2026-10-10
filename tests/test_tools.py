@@ -2,6 +2,7 @@
 
 import asyncio
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -78,7 +79,7 @@ async def test_http_get_offline_allowlist(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_sql_is_read_only(tmp_path: Path) -> None:
-    with sqlite3.connect(tmp_path / "sample.sqlite3") as c:
+    with closing(sqlite3.connect(tmp_path / "sample.sqlite3")) as c, c:
         c.execute("CREATE TABLE items (id INTEGER)")
         c.execute("INSERT INTO items VALUES (10)")
     reg = make_registry(tmp_path)

@@ -6,6 +6,7 @@ import json
 import operator
 import re
 import sqlite3
+from contextlib import closing
 from collections.abc import Awaitable, Callable
 from decimal import Decimal
 from pathlib import Path
@@ -198,7 +199,7 @@ def make_registry(
         if not db.is_file():
             raise ValueError("sample database missing")
         uri = f"file:{db.as_posix()}?mode=ro"
-        with sqlite3.connect(uri, uri=True, timeout=2) as connection:
+        with closing(sqlite3.connect(uri, uri=True, timeout=2)) as connection, connection:
             connection.execute("PRAGMA query_only=ON")
             cursor = connection.execute(q)
             rows = cursor.fetchmany(101)

@@ -100,6 +100,17 @@ class GuardedExecutor:
                         code="invalid_arguments",
                     )
                     continue
+                if name in self.policy.outward:
+                    edited = json.dumps(arguments, ensure_ascii=False, sort_keys=True)
+                    if any(token and token in edited for token in self.policy.canaries):
+                        results[idx] = ToolResult(
+                            name,
+                            call_id,
+                            False,
+                            error="outbound canary detected after approval edits",
+                            code="data_leak",
+                        )
+                        continue
                 # Re-validate edits in ToolRegistry.execute; never use pre-approved raw data.
                 results[idx] = await self.registry.execute(
                     name, arguments, call_id=call_id, approved=True
