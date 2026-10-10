@@ -167,7 +167,17 @@ class AgentRunner:
                 except TimeoutError:
                     return finish("budget_exceeded", step, error="LLM call timed out")
                 except Exception as exc:
-                    return finish("provider_error", step, error=type(exc).__name__)
+                    frame = exc.__traceback__
+                    while frame is not None and frame.tb_next is not None:
+                        frame = frame.tb_next
+                    location = (
+                        f"{frame.tb_frame.f_code.co_name}:{frame.tb_lineno}"
+                        if frame is not None
+                        else "unknown"
+                    )
+                    return finish(
+                        "provider_error", step, error=f"{type(exc).__name__}@{location}"
+                    )
                 if trace:
                     trace.emit(
                         "llm",
