@@ -127,7 +127,7 @@ class ToolRegistry:
     ) -> list[ToolResult]:
         if max_concurrency < 1 or max_concurrency > 16:
             raise ValueError("invalid max_concurrency")
-        effects = [name for name, _, _ in calls if self.get(name) and self.get(name).side_effect]
+        effects = [name for name, _, _ in calls if (tool := self.get(name)) is not None and tool.side_effect]
         if len(effects) > 1:
             return [
                 ToolResult(name, call_id, False, error="conflicting side effects", code="conflict")

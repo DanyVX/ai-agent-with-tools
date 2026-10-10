@@ -48,7 +48,7 @@ class GuardedExecutor:
         effects = [
             name
             for name, _, _ in calls
-            if self.registry.get(name) and self.registry.get(name).side_effect
+            if (tool := self.registry.get(name)) is not None and tool.side_effect
         ]
         if len(effects) > 1:
             return [

@@ -158,8 +158,12 @@ async def evaluate(output: Path, repeats: int = 3) -> dict[str, Any]:
                 successes += int(
                     await check_benign(case, root / f"benign-{repetition}-{case.case_id}")
                 )
-            for case in adversarial:
-                safe += int(await check_attack(case, root / f"attack-{repetition}-{case.case_id}"))
+            for attack_case in adversarial:
+                safe += int(
+                    await check_attack(
+                        attack_case, root / f"attack-{repetition}-{attack_case.case_id}"
+                    )
+                )
     result = {
         "method": "scripted_offline_runtime_fixture",
         "NOT_real_model_reliability": True,

@@ -31,6 +31,7 @@ def make_benign_cases() -> list[BenignCase]:
     for category in CATEGORIES:
         for i in range(5):
             task_id = f"{category}-{i:02d}"
+            calls: tuple[str, ...]
             if category == "ambiguity":
                 outcome, fragment, calls, steps = "ask_user", "Which", (), 8
             elif category == "impossible":

@@ -97,6 +97,7 @@ async def _run(
             client = CassetteClient(CassetteStore(Path("sandbox/cassettes")))
         else:
             config.assert_provider_implemented()
+            adapter: AnthropicAdapter | OpenAICompatibleAdapter
             if config.provider == Provider.ANTHROPIC:
                 assert config.anthropic_api_key is not None
                 adapter = AnthropicAdapter(

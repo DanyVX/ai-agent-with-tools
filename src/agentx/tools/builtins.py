@@ -6,7 +6,7 @@ import json
 import operator
 import re
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -239,7 +239,9 @@ def make_registry(
             {"to": arg.to, "subject": arg.subject, "body": arg.body, "mock": True},
         )
 
-    definitions = [
+    definitions: list[
+        tuple[str, str, type[StrictArgs], Callable[[StrictArgs], Awaitable[Any]], bool]
+    ] = [
         (
             "calculator",
             "Safely evaluate + - * / and parentheses",
